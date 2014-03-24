@@ -10,6 +10,7 @@ import java.util.List;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
 
 import net.sf.asap.ASAP;
@@ -32,6 +33,7 @@ public class ASAPRadio implements Runnable {
 	private boolean playing = false;
 
 	List<File> fileList = new ArrayList<File>();
+	private float fVolume = .9f;
 
 	public void loadDirectory(File dir) throws IOException {
 		if (dir == null || !dir.exists() || !dir.isDirectory()) {
@@ -88,6 +90,7 @@ public class ASAPRadio implements Runnable {
 							new AudioFormat(44100.0f, 16, info.getChannels(),
 									true, false))));
 			this.line.open();
+			setVolume(fVolume);
 			this.line.start();
 
 			if (thread == null) {
@@ -100,6 +103,7 @@ public class ASAPRadio implements Runnable {
 			System.out.println("Playing song: " + name);
 			playing = true;
 		}
+		
 	}
 
 	public void play(int num) throws Exception {
@@ -119,6 +123,22 @@ public class ASAPRadio implements Runnable {
 		byte[] bytes = baos.toByteArray();
 
 		play(file.getName(), bytes);
+	}
+	
+	public void setVolume(float percent) {
+		FloatControl fc = (FloatControl) this.line
+				.getControl(FloatControl.Type.MASTER_GAIN);
+
+		float delta = fc.getMaximum() - fc.getMinimum();
+		float f = (float) (fc.getMaximum() - delta * (1 - percent));
+
+		if (f < fc.getMinimum())
+			f = fc.getMinimum();
+		if (f > fc.getMaximum())
+			f = fc.getMaximum();
+
+		fVolume = percent;
+		fc.setValue(f);
 	}
 
 	@Override
