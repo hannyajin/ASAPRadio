@@ -17,10 +17,10 @@ import net.sf.asap.ASAP;
 import net.sf.asap.ASAPInfo;
 
 /**
- * Baisc ASAP music player with javax.sound.
+ * Basic ASAP music player with javax.sound.
  * 
  * @author hannyajin
- *
+ * @link http://asap.sourceforge.net/
  */
 public class ASAPRadio implements Runnable {
 
@@ -50,13 +50,18 @@ public class ASAPRadio implements Runnable {
 		System.out.println("Success.");
 	}
 
+	/**
+	 * Sample program. Plays all music files in music/ directory for 20 seconds.
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		ASAPRadio radio = null;
 		try {
 			radio = new ASAPRadio();
 
 			File dir = new File(ASAPRadio.class.getClassLoader()
-					.getResource("music").getPath());
+					.getResource(args.length < 1 ? "music" : args[0]).getPath());
 
 			radio.loadDirectory(dir);
 		} catch (IOException e) {
@@ -67,17 +72,24 @@ public class ASAPRadio implements Runnable {
 			try {
 				radio.play(i);
 
-				Thread.sleep(10000);
+				Thread.sleep(20000);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @param name
+	 *            must include '.' separated file extension (music format)
+	 * @param bytes
+	 * @throws Exception
+	 */
 	public void play(String name, byte[] bytes) throws Exception {
 		synchronized (lock) {
 			this.asap.load(name, bytes, bytes.length);
-			this.asap.playSong(0, -1);
+			this.asap.playSong(0, -1); // 0 - seek value (start), -1 = looping
 
 			ASAPInfo info = asap.getInfo();
 
@@ -97,13 +109,14 @@ public class ASAPRadio implements Runnable {
 				thread = new Thread(this);
 				thread.start();
 			} else {
+				// interrupt to prepare for new music
 				thread.interrupt();
 			}
 
 			System.out.println("Playing song: " + name);
 			playing = true;
 		}
-		
+
 	}
 
 	public void play(int num) throws Exception {
@@ -124,7 +137,7 @@ public class ASAPRadio implements Runnable {
 
 		play(file.getName(), bytes);
 	}
-	
+
 	public void setVolume(float percent) {
 		FloatControl fc = (FloatControl) this.line
 				.getControl(FloatControl.Type.MASTER_GAIN);
@@ -141,9 +154,65 @@ public class ASAPRadio implements Runnable {
 		fc.setValue(f);
 	}
 
+	/**
+	 * Stop and reset music position.
+	 */
+	public void stop() {
+		playing = false;
+		reset();
+	}
+
+	/**
+	 * Reset music playback position.
+	 */
+	public void reset() {
+		seek(0);
+	}
+
+	public void seek(int len) {
+		if (len < 0)
+			len = 0;
+		synchronized (lock) {
+			try {
+				this.asap.seek(len);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Start music playback from previous position.
+	 */
+	public void start() {
+		playing = true;
+	}
+
+	/**
+	 * Pause music playback.
+	 */
+	public void pause() {
+		playing = false;
+	}
+
+	/**
+	 * Close ASAPRadio and free used memory
+	 */
+	public void close() {
+		synchronized (lock) {
+			if (this.line != null)
+				this.line.close();
+			isRunning = false;
+			if (this.thread != null)
+				thread.interrupt();
+		}
+	}
+
+	private boolean isRunning = true;
+
 	@Override
 	public void run() {
-		while (true) {
+		while (isRunning) {
 			try {
 				synchronized (lock) {
 					if (playing) {
@@ -156,7 +225,7 @@ public class ASAPRadio implements Runnable {
 
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				// ignore (useless).
+				// ignore (useless and harmless).
 			}
 		}
 	}
