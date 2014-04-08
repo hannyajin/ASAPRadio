@@ -29,6 +29,8 @@ public class ASAPRadio implements Runnable {
 
 	private Object lock = new Object();
 	private Thread thread = null;
+	
+	private int trackLength = 0;
 
 	private boolean playing = false;
 
@@ -68,15 +70,23 @@ public class ASAPRadio implements Runnable {
 			e.printStackTrace();
 		}
 
-		for (int i = 0; i < radio.fileList.size(); i++) {
-			try {
-				radio.play(i);
-
-				Thread.sleep(20000);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			radio.play(120);
+		} catch (Exception e1) {
+			e1.printStackTrace();
 		}
+		
+		
+		
+//		for (int i = 0; i < radio.fileList.size(); i++) {
+//			try {
+//				radio.play(i);
+//
+//				Thread.sleep(20000);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
 	}
 
 	/**
@@ -91,6 +101,8 @@ public class ASAPRadio implements Runnable {
 			this.asap.load(name, bytes, bytes.length);
 			this.asap.playSong(0, -1); // 0 - seek value (start), -1 = looping
 
+			trackLength = bytes.length;
+			
 			ASAPInfo info = asap.getInfo();
 
 			if (line != null) {
@@ -212,6 +224,7 @@ public class ASAPRadio implements Runnable {
 
 	@Override
 	public void run() {
+		int count = 0;
 		while (isRunning) {
 			try {
 				synchronized (lock) {
@@ -220,6 +233,23 @@ public class ASAPRadio implements Runnable {
 
 						int len = this.asap.generate(bytes, bytes.length, 1);
 						this.line.write(bytes, 0, len);
+						count += len;
+
+						
+						if (false) {
+							System.out.println("Replaying music.");
+							try {
+								this.asap.seek(0);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+						
+						System.out.println("Pos: " + this.asap.getPosition() + " / " + trackLength);
+//						System.out.println("Blocks: " + this.asap.getBlocksPlayed());
+						int n = 0;
+						this.asap.detectSilence(n);
+						System.out.println("n: " + n);
 					}
 				}
 
