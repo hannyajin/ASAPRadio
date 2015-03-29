@@ -53,7 +53,7 @@ public class ASAPRadio implements Runnable {
 	}
 
 	/**
-	 * Sample program. Plays all music files in music/ directory for 20 seconds.
+	 * Sample program. Plays all music files in music/ directory for 8 seconds.
 	 * 
 	 * @param args
 	 */
@@ -62,31 +62,34 @@ public class ASAPRadio implements Runnable {
 		try {
 			radio = new ASAPRadio();
 
-			File dir = new File(ASAPRadio.class.getClassLoader()
-					.getResource(args.length < 1 ? "music" : args[0]).getPath());
+			File dir = new File(ASAPRadio.class.getClassLoader().getResource(args.length < 1 ? "music" : args[0]).getPath());
 
 			radio.loadDirectory(dir);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
+		/**
 		try {
-			radio.play(120);
+			radio.play(5);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
+		/**/
 		
 		
-		
-//		for (int i = 0; i < radio.fileList.size(); i++) {
-//			try {
-//				radio.play(i);
-//
-//				Thread.sleep(20000);
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
+		/**/
+		for (int i = 0; i < radio.fileList.size(); i++) {
+			try {
+				System.out.println();
+				radio.play(i);
+
+				Thread.sleep(8000);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		/**/
 	}
 
 	/**
@@ -222,6 +225,7 @@ public class ASAPRadio implements Runnable {
 
 	private boolean isRunning = true;
 
+	private int lastpp = 0;
 	@Override
 	public void run() {
 		int count = 0;
@@ -245,11 +249,17 @@ public class ASAPRadio implements Runnable {
 							}
 						}
 						
-						System.out.println("Pos: " + this.asap.getPosition() + " / " + trackLength);
-//						System.out.println("Blocks: " + this.asap.getBlocksPlayed());
+						int pp = this.asap.getPosition() / 1000;
+						int tt = (trackLength * 32) / 1000;
+						if (pp != lastpp) {
+							System.out.print("\r                                 ");
+							System.out.print("\rPos: " + pp + " / " + tt);
+						}
+						//System.out.println("Blocks: " + this.asap.getBlocksPlayed());
+						lastpp = pp;
 						int n = 0;
 						this.asap.detectSilence(n);
-						System.out.println("n: " + n);
+						//System.out.println("n: " + n);
 					}
 				}
 
